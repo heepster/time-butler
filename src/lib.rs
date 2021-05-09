@@ -2,28 +2,30 @@ use chrono::prelude::*;
 use regex::Regex;
 
 pub fn date_parse(time_str: &str) -> Result<DateTime<Local>, &'static str> {
+    let mut our_str = time_str.to_string();
+    our_str.retain(|c| !c.is_whitespace());
+
     let unix_secs_format = Regex::new(r"^\d{10}$").unwrap();
     let unix_secs_with_nano_format = Regex::new(r"^\d{13}$").unwrap();
 
-    if unix_secs_format.is_match(time_str) {
-        let integer = time_str.parse::<i64>().unwrap();
+    if unix_secs_format.is_match(&our_str) {
+        let integer = our_str.parse::<i64>().unwrap();
         let dt = Utc.timestamp(integer, 0).with_timezone(&Local);
         return Ok(dt);
-    } else if unix_secs_with_nano_format.is_match(time_str) {
-        let integer = time_str.parse::<i64>().unwrap();
+    } else if unix_secs_with_nano_format.is_match(&our_str) {
+        let integer = our_str.parse::<i64>().unwrap();
         let seconds = integer / 1000;
         let nano = (integer % 1000) as u32;
         let dt = Utc.timestamp(seconds, nano).with_timezone(&Local);
         return Ok(dt);
     } else {
         let mut date_formats = vec![
-            "%Y-%m-%d %H:%M:%S %z",
-            "%Y-%m-%dT%H:%M:%S %z",
+            "%Y-%m-%d %H:%M:%S%z",
             "%Y-%m-%dT%H:%M:%S%z",
         ];
 
         for date_format in date_formats.iter_mut() {
-            let parsed = DateTime::parse_from_str(time_str, date_format);
+            let parsed = DateTime::parse_from_str(&our_str, date_format);
             if parsed.is_ok() {
                 return Ok(parsed.unwrap().with_timezone(&Local));
             }
