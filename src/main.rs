@@ -1,4 +1,4 @@
-use std::io;
+use std::io::{self, BufRead};
 use clap::{App, AppSettings, Arg};
 
 mod lib;
@@ -27,28 +27,26 @@ fn main() {
         )
         .get_matches();
 
-    let time_str;
-
     if matches.is_present("stdin") {
-        let mut stdin_str = String::new();
-        if let Ok(_) = io::stdin().read_line(&mut stdin_str) {
-            time_str = stdin_str
-        } else {
-            println!("Couldn't read from stdin");
-            std::process::exit(1);
+        for line in io::stdin().lock().lines() {
+            let line = line.expect("Could not read from stdin");
+            let parsed = lib::date_parse(&line);
+            match parsed {
+                Ok(o) => println!("{:?}", o),
+                Err(_) => println!("{:?}", line)
+            }
         }
     } else if let Some(o) = matches.value_of("arg_datetime") {
-        println!("Must pass datetime as an argument");
-        time_str = o.to_string();
+        let time_str = o.to_string();
+        std::process::exit(match lib::date_parse(&time_str) {
+            Ok(local_time) => {
+                println!("{:?}", local_time);
+                0
+            }
+            Err(_) => 1,
+        });
     } else {
+        println!("Must pass datetime as an argument");
         std::process::exit(1);
     }
-
-    std::process::exit(match lib::date_parse(&time_str) {
-        Ok(local_time) => {
-            println!("{:?}", local_time);
-            0
-        }
-        Err(_) => 1,
-    });
 }

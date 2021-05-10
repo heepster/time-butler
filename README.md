@@ -42,10 +42,15 @@ tb "2021-05-09T23:03:18+00:00"
 => 2021-05-09T16:03:18-07:00
 ```
 
-Read from STDIN.
+Read from STDIN:
 ```
 echo 1620601103 | tb -i
 => 2021-05-09T15:58:23-07:00
+```
+
+Continously read from STDIN:
+```
+tail -f file-with-timestamps.txt | tb -i
 ```
 
 ## Roadmap
