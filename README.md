@@ -1,4 +1,4 @@
-Time Butler: A CLI tool for easy datetime conversions to
+Time Butler: A CLI tool for easy datetime conversions
 =====================================================
 ![Build Status](https://travis-ci.com/heepster/time-butler.svg?branch=main)
 
