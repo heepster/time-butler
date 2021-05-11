@@ -1,5 +1,31 @@
 use chrono::prelude::*;
 use regex::Regex;
+use std::vec;
+
+pub fn replace_datetime_in_str(input: &str) -> Option<String> {
+    let rgs = vec![
+        // Match strings that are like 2021-05-09T20:08:07-07:00
+        Regex::new(r"(\d{4}-\d{2}-\d{2}(?:T|\s+)\d{2}:\d{2}:\d{2}\s*[+-]\d{2}:\d{2})").unwrap(),
+
+        // Match Unix timestamps
+        Regex::new(r"(\d{10})").unwrap(),
+        Regex::new(r"(\d{13})").unwrap(),
+    ];
+
+    for rg in rgs.iter() {
+      let captures = rg.captures(input);
+      if captures.is_some() {
+            let captured = captures.unwrap().get(1).map_or("", |m| m.as_str());
+            let maybe_parsed = date_parse(captured);
+            if maybe_parsed.is_ok() {
+                let parsed_date = maybe_parsed.unwrap().to_string();
+                let replaced = input.replace(captured, &parsed_date);
+                return Some(replaced);
+            }
+        }
+    }
+    return None
+}
 
 pub fn date_parse(time_str: &str) -> Result<DateTime<Local>, &'static str> {
     let mut our_str = time_str.to_string();
@@ -38,6 +64,29 @@ pub fn date_parse(time_str: &str) -> Result<DateTime<Local>, &'static str> {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    fn test_no_replacement_of_str() {
+        let expected = "404 log blah blah";
+        let result = replace_datetime_in_str(expected);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_replace_datetime_in_str() {
+        let test_dt = "[2021-05-09 20:37:39 +00:00] -- 404 log blah blah";
+        let result = replace_datetime_in_str(test_dt);
+        assert!(result.is_some());
+        println!("{:?}", result.unwrap());
+    }
+
+    #[test]
+    fn test_replace_unix_10_digit_in_str() {
+        let test_dt = "[1620587968] -- 404 log blah blah";
+        let result = replace_datetime_in_str(test_dt);
+        assert!(result.is_some());
+        println!("{:?}", result.unwrap());
+    }
 
     #[test]
     fn test_10_digit_unix_timestamp() {
